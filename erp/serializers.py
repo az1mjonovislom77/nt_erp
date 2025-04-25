@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Category, Course
+from .models import Category, Course, Student
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -17,3 +17,9 @@ class CourseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
         fields = ['id', 'name', 'description', 'price', 'duration', 'category', 'category_id']
+
+class StudentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Student
+        fields = '__all__'
+        read_only_fields = ('student_code',)
