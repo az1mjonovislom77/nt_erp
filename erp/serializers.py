@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from .models import Category, Course, Student
+from django.conf import settings
+
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -16,10 +18,17 @@ class CourseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ['id', 'name', 'description', 'price', 'duration', 'category', 'category_id']
-
+        fields = ['__all__']
+        
 class StudentSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField(read_only=True)
+
     class Meta:
         model = Student
-        fields = '__all__'
-        read_only_fields = ('student_code',)
+        fields = ['first_name', 'last_name', 'gender', 'phone_number', 'student_code', 'image']
+    
+    def get_image(self, obj):
+        request = self.context.get('request')
+        if obj.image:
+            return request.build_absolute_url(obj.image.url)
+        return None

@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.generics import GenericAPIView
 from .models import Category, Course, Student
 from .serializers import CategorySerializer, CourseSerializer, StudentSerializer
 
@@ -103,10 +104,9 @@ class CourseDetailAPIView(APIView):
     
 
 class StudentListCreateAPIView(APIView):
-
     def get(self, request, *args, **kwargs):
         students = Student.objects.all()
-        serializer = StudentSerializer(students, many=True)
+        serializer = StudentSerializer(students, many=True, context = {'request': request})
         return Response(serializer.data)
 
     def post(self, request, *args, **kwargs):
@@ -118,7 +118,6 @@ class StudentListCreateAPIView(APIView):
 
 
 class StudentDetailAPIView(APIView):
-
     def get_object(self, pk):
         try:
             return Student.objects.get(pk=pk)
@@ -148,3 +147,19 @@ class StudentDetailAPIView(APIView):
             return Response({'error': 'Student not found'}, status=status.HTTP_404_NOT_FOUND)
         student.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+    
+class CourseListByCategory(GenericAPIView):
+    serializer_class = CourseSerializer
+
+    def get_queryset(self):
+        category_id = self.kwargs.get('category_id')
+        if category_id:
+            return Course.objects.filter(category=category_id)
+        return Course.objects.none()
+
+    def get(self, request, *args, **kwargs):
+        courses = self.get_queryset()
+        serializer = self.get_serializer(courses, many=True)
+        return Response(serializer.data)
+    
