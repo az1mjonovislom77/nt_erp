@@ -1,6 +1,5 @@
 from rest_framework import serializers
-from .models import Category, Course, Student
-from django.conf import settings
+from .models import Category, Course, Student, Module, Homework
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -32,3 +31,17 @@ class StudentSerializer(serializers.ModelSerializer):
         if obj.image:
             return request.build_absolute_url(obj.image.url)
         return None
+
+
+class ModuleSerializer(serializers.ModelSerializer):
+    group = serializers.StringRelatedField()  
+    class Meta:
+        model = Module
+        fields = ['id', 'title', 'group', 'is_given']
+
+class HomeworkSerializer(serializers.ModelSerializer):
+    module = ModuleSerializer(read_only=True) 
+
+    class Meta:
+        model = Homework
+        fields = ['id', 'overview', 'file', 'deadline', 'module']

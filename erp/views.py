@@ -2,8 +2,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
-from .models import Category, Course, Student
-from .serializers import CategorySerializer, CourseSerializer, StudentSerializer
+from .models import Category, Course, Student,Homework, Module
+from .serializers import CategorySerializer, CourseSerializer, StudentSerializer, HomeworkSerializer, ModuleSerializer
 
 
 class CategoryListCreateAPIView(APIView):
@@ -162,4 +162,32 @@ class CourseListByCategory(GenericAPIView):
         courses = self.get_queryset()
         serializer = self.get_serializer(courses, many=True)
         return Response(serializer.data)
-    
+
+class ModuleListByGroup(GenericAPIView):
+    serializer_class = ModuleSerializer
+
+    def get_queryset(self):
+        group_id = self.kwargs.get('group_id')
+        if group_id:
+            return Module.objects.filter(group_id=group_id)
+        return Module.objects.none()
+
+    def get(self, request, *args, **kwargs):
+        modules = self.get_queryset()
+        serializer = self.get_serializer(modules, many=True)
+        return Response(serializer.data)
+
+
+class HomeworkListByModule(GenericAPIView):
+    serializer_class = HomeworkSerializer
+
+    def get_queryset(self):
+        module_id = self.kwargs.get('module_id')
+        if module_id:
+            return Homework.objects.filter(module_id=module_id)
+        return Homework.objects.none()
+
+    def get(self, request, *args, **kwargs):
+        homework = self.get_queryset()
+        serializer = self.get_serializer(homework, many=True)
+        return Response(serializer.data)
