@@ -1,193 +1,94 @@
+from rest_framework import status
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, GenericAPIView, CreateAPIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.generics import GenericAPIView
-from .models import Category, Course, Student,Homework, Module
-from .serializers import CategorySerializer, CourseSerializer, StudentSerializer, HomeworkSerializer, ModuleSerializer
+from rest_framework.permissions import IsAuthenticated
+from django.db.models import Count
+from erp.models import Category, Course, Student, Homework, Teacher, Group, Module, Video
+from .serializers import CategoryModelSerializer, CourseModelSerializer, StudentModelSerializer, HomeworkSerializer, TeacherSerializer, GroupSerializer, ModuleSerializer, VideoSerializer
 
 
-class CategoryListCreateAPIView(APIView):
-
-    def get(self, request, *args, **kwargs):
-        categories = Category.objects.all()
-        serializer = CategorySerializer(categories, many=True)
+class BaseListApiView(GenericAPIView):
+    def get_serializer_data(self, queryset, serializer_class):
+        serializer = serializer_class(queryset, many=True)
         return Response(serializer.data)
 
-    def post(self, request, *args, **kwargs):
-        serializer = CategorySerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class CategoryListCreateApiView(BaseListApiView, ListCreateAPIView):
+    queryset = Category.objects.all().annotate(course_count=Count('courses'))
+    serializer_class = CategoryModelSerializer
+    permission_classes = [IsAuthenticated]
 
 
-class CategoryDetailAPIView(APIView):
-
-    def get_object(self, pk):
-        try:
-            return Category.objects.get(pk=pk)
-        except Category.DoesNotExist:
-            return None
-
-    def get(self, request, pk, *args, **kwargs):
-        category = self.get_object(pk)
-        if not category:
-            return Response({'error': 'Category not found'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = CategorySerializer(category)
-        return Response(serializer.data)
-
-    def put(self, request, pk, *args, **kwargs):
-        category = self.get_object(pk)
-        if not category:
-            return Response({'error': 'Category not found'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = CategorySerializer(category, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, pk, *args, **kwargs):
-        category = self.get_object(pk)
-        if not category:
-            return Response({'error': 'Category not found'}, status=status.HTTP_404_NOT_FOUND)
-        category.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+class CategoryDetailApiView(RetrieveUpdateDestroyAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategoryModelSerializer
+    lookup_field = 'pk'
 
 
-
-class CourseListCreateAPIView(APIView):
-
-    def get(self, request, *args, **kwargs):
-        courses = Course.objects.all()
-        serializer = CourseSerializer(courses, many=True)
-        return Response(serializer.data)
-
-    def post(self, request, *args, **kwargs):
-        serializer = CourseSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class CourseListCreateApiView(ListCreateAPIView):
+    queryset = Course.objects.all()
+    serializer_class = CourseModelSerializer
 
 
-class CourseDetailAPIView(APIView):
-
-    def get_object(self, pk):
-        try:
-            return Course.objects.get(pk=pk)
-        except Course.DoesNotExist:
-            return None
-
-    def get(self, request, pk, *args, **kwargs):
-        course = self.get_object(pk)
-        if not course:
-            return Response({'error': 'Course not found'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = CourseSerializer(course)
-        return Response(serializer.data)
-
-    def put(self, request, pk, *args, **kwargs):
-        course = self.get_object(pk)
-        if not course:
-            return Response({'error': 'Course not found'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = CourseSerializer(course, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, pk, *args, **kwargs):
-        course = self.get_object(pk)
-        if not course:
-            return Response({'error': 'Course not found'}, status=status.HTTP_404_NOT_FOUND)
-        course.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-    
-
-class StudentListCreateAPIView(APIView):
-    def get(self, request, *args, **kwargs):
-        students = Student.objects.all()
-        serializer = StudentSerializer(students, many=True, context = {'request': request})
-        return Response(serializer.data)
-
-    def post(self, request, *args, **kwargs):
-        serializer = StudentSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class StudentDetailAPIView(APIView):
-    def get_object(self, pk):
-        try:
-            return Student.objects.get(pk=pk)
-        except Student.DoesNotExist:
-            return None
-
-    def get(self, request, pk, *args, **kwargs):
-        student = self.get_object(pk)
-        if not student:
-            return Response({'error': 'Student not found'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = StudentSerializer(student)
-        return Response(serializer.data)
-
-    def put(self, request, pk, *args, **kwargs):
-        student = self.get_object(pk)
-        if not student:
-            return Response({'error': 'Student not found'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = StudentSerializer(student, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, pk, *args, **kwargs):
-        student = self.get_object(pk)
-        if not student:
-            return Response({'error': 'Student not found'}, status=status.HTTP_404_NOT_FOUND)
-        student.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-    
-    
-class CourseListByCategory(GenericAPIView):
-    serializer_class = CourseSerializer
+class CourseListByCategory(BaseListApiView):
+    serializer_class = CourseModelSerializer
 
     def get_queryset(self):
         category_id = self.kwargs.get('category_id')
-        if category_id:
-            return Course.objects.filter(category=category_id)
-        return Course.objects.none()
+        return Course.objects.filter(category=category_id) if category_id else Course.objects.none()
 
     def get(self, request, *args, **kwargs):
         courses = self.get_queryset()
-        serializer = self.get_serializer(courses, many=True)
-        return Response(serializer.data)
+        return self.get_serializer_data(courses, self.serializer_class)
 
-class ModuleListByGroup(GenericAPIView):
+
+class StudentGenericApiView(BaseListApiView):
+    queryset = Student.objects.all()
+    serializer_class = StudentModelSerializer
+
+    def get(self, request, *args, **kwargs):
+        return self.get_serializer_data(self.get_queryset(), self.serializer_class)
+
+
+class HomeworkCreateAPIView(CreateAPIView):
+    serializer_class = HomeworkSerializer
+    queryset = Homework.objects.all()
+
+
+class TeacherGenericApiView(BaseListApiView):
+    queryset = Teacher.objects.all()
+    serializer_class = TeacherSerializer
+
+    def get(self, request, *args, **kwargs):
+        return self.get_serializer_data(self.get_queryset(), self.serializer_class)
+
+
+class GroupGenericApiView(BaseListApiView):
+    queryset = Group.objects.all()
+    serializer_class = GroupSerializer
+
+    def get(self, request, *args, **kwargs):
+        return self.get_serializer_data(self.get_queryset(), self.serializer_class)
+
+
+class ModuleGenericApiView(BaseListApiView):
+    queryset = Module.objects.all()
     serializer_class = ModuleSerializer
 
-    def get_queryset(self):
-        group_id = self.kwargs.get('group_id')
-        if group_id:
-            return Module.objects.filter(group_id=group_id)
-        return Module.objects.none()
-
     def get(self, request, *args, **kwargs):
-        modules = self.get_queryset()
-        serializer = self.get_serializer(modules, many=True)
+        return self.get_serializer_data(self.get_queryset(), self.serializer_class)
+
+
+class VideoGenericApiView(APIView):
+    def get(self, request, *args, **kwargs):
+        videos = Video.objects.all()
+        serializer = VideoSerializer(videos, many=True, context={'request': request})
         return Response(serializer.data)
 
-
-class HomeworkListByModule(GenericAPIView):
-    serializer_class = HomeworkSerializer
-
-    def get_queryset(self):
-        module_id = self.kwargs.get('module_id')
-        if module_id:
-            return Homework.objects.filter(module_id=module_id)
-        return Homework.objects.none()
-
-    def get(self, request, *args, **kwargs):
-        homework = self.get_queryset()
-        serializer = self.get_serializer(homework, many=True)
-        return Response(serializer.data)
+    def post(self, request, *args, **kwargs):
+        serializer = VideoSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

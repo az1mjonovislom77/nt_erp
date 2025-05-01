@@ -4,8 +4,9 @@ from django.db import models
 from datetime import timedelta
 from django.db import models
 from django.utils import timezone
+from django.utils.text import slugify
 
-
+# Create your models here.
 
 def generate_student_code():
     while True:
@@ -15,6 +16,7 @@ def generate_student_code():
 
 
 def default_deadline():
+    # timezone.now() ga 48 soat qo‘shib qaytaramiz
     return timezone.now() + timedelta(hours=48)
 
 
@@ -33,10 +35,16 @@ class Teacher(models.Model):
     
 class Category(models.Model):
     name = models.CharField(max_length=50)
-    slug = models.SlugField(max_length=50,unique=True)
+    slug = models.SlugField(max_length=50,unique=True,null=True)
     
     def __str__(self):
         return self.name
+    
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+        
 
 class Course(models.Model):
     name = models.CharField(max_length=50)
@@ -46,6 +54,10 @@ class Course(models.Model):
     category = models.ForeignKey(Category,
                                  on_delete=models.CASCADE,
                                  related_name='courses')
+    
+    
+    def __str__(self):
+        return self.name
     
 
 class Group(models.Model):
@@ -60,8 +72,7 @@ class Group(models.Model):
                                related_name='groups')
     teacher = models.ForeignKey(Teacher,
                                 on_delete=models.SET_NULL,
-                                null=True,
-                                related_name='groups')
+                                related_name='groups',null=True)
     started_at = models.DateTimeField()
     ended_at = models.DateTimeField()
     status = models.CharField(choices=StatusChoice.choices,default = StatusChoice.NOT_STARTED.value)
@@ -85,21 +96,50 @@ class Module(models.Model):
     
 class Homework(models.Model):
     overview = models.TextField()
-    file = models.FileField(upload_to='homework/files/')
+    file = models.FileField(upload_to='homework/files/',null=True,blank=True)
     deadline = models.DateTimeField(default=default_deadline,
                                     help_text="Avtomatik: hozirgi vaqtdan 48 soat keyingi muddat"
                                     )
     module = models.ForeignKey(Module,
                                on_delete=models.CASCADE,
                                related_name='homework')
+    created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
         return self.overview
     
-class Video(models.Model):
-    pass  
     
+def size_maker(value):
+    if value < 512000:
+        value /= 1024.0
+        ext="KB"
+    elif value < 4194304000:
+        value /= 1048576.0
+        ext="MB"
+    else:
+        value /= 1073741824.0
+        ext="MB"
+    return '%s %s' % (str(round(value, 2)),ext)
 
+
+
+class Video(models.Model):
+    title = models.CharField(max_length=200)
+    file = models.FileField(upload_to='video/files/', null=True,blank=True)
+    module = models.ForeignKey(Module,
+                               on_delete=models.CASCADE,
+                               related_name='videos')
+    
+    def __str__(self):
+        return self.title
+    
+    @property
+    def file_size(self):
+        if self.file:
+            return size_maker(self.file.size)
+        return None
+    
+    
 class Student(models.Model):
     gender_choices = (
         ("MALE","male"),
@@ -123,13 +163,18 @@ class Student(models.Model):
         max_length=5,
         unique=True,
         default=generate_student_code,
-        editable=False,
+        editable=False,    
         help_text="Avtomatik yaratilgan 5 xonali student kod"
     )
     group = models.ForeignKey(Group,
                               on_delete=models.SET_NULL,
-                              null=True,
-                              related_name='students')
+                              related_name='students',
+                              blank=True,
+                              null=True)
+    
+    @property
+    def full_name(self):
+        return f'{self.first_name} {self.last_name}'
     
     def __str__(self):
         return self.student_code
