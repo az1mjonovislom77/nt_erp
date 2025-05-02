@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models import Count
 from erp.models import Category, Course, Student, Homework, Teacher, Group, Module, Video
 from .serializers import CategoryModelSerializer, CourseModelSerializer, StudentModelSerializer, HomeworkSerializer, TeacherSerializer, GroupSerializer, ModuleSerializer, VideoSerializer
-
+from .permissions import CanEditWithinTwoHours, IsWorkingHours
 
 class BaseListApiView(GenericAPIView):
     def get_serializer_data(self, queryset, serializer_class):
@@ -52,6 +52,7 @@ class StudentGenericApiView(BaseListApiView):
 
 
 class HomeworkCreateAPIView(CreateAPIView):
+    permission_classes = [CanEditWithinTwoHours]
     serializer_class = HomeworkSerializer
     queryset = Homework.objects.all()
 
@@ -81,6 +82,7 @@ class ModuleGenericApiView(BaseListApiView):
 
 
 class VideoGenericApiView(APIView):
+    permission_classes = [IsAuthenticated, IsWorkingHours]
     def get(self, request, *args, **kwargs):
         videos = Video.objects.all()
         serializer = VideoSerializer(videos, many=True, context={'request': request})
