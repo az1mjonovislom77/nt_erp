@@ -81,16 +81,13 @@ class ModuleGenericApiView(BaseListApiView):
         return self.get_serializer_data(self.get_queryset(), self.serializer_class)
 
 
-class VideoGenericApiView(APIView):
-    permission_classes = [IsAuthenticated, IsWorkingHours]
-    def get(self, request, *args, **kwargs):
-        videos = Video.objects.all()
-        serializer = VideoSerializer(videos, many=True, context={'request': request})
-        return Response(serializer.data)
+class VideoListCreateAPIView(ListCreateAPIView):
+    queryset = Video.objects.all()
+    serializer_class = VideoSerializer
 
-    def post(self, request, *args, **kwargs):
-        serializer = VideoSerializer(data=request.data, context={'request': request})
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class VideoDetailAPIView(RetrieveUpdateDestroyAPIView):
+    queryset = Video.objects.all()
+    serializer_class = VideoSerializer
+    lookup_field = 'pk'
+

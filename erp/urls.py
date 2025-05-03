@@ -8,8 +8,12 @@ from .views import (
     StudentGenericApiView,
     CourseListByCategory,
     HomeworkCreateAPIView,
-    VideoGenericApiView,
+    VideoDetailAPIView,
+    VideoListCreateAPIView
+
 )
+
+from .custom_oauth_token import CustomLoginView, CustomLogoutView 
 
 urlpatterns = [
     # Category Urls
@@ -29,7 +33,13 @@ urlpatterns = [
     path('homework/', HomeworkCreateAPIView.as_view(), name='homework_create'),
     
     # Video Urls
-    path('videos/', VideoGenericApiView.as_view(), name='video_create'),
+    path('videos/', VideoListCreateAPIView.as_view(), name='video_create'),
+    path('videos/<int:pk>/', VideoDetailAPIView.as_view(), name='video_detail'),
     
+    # Login/Logout
+    path('login/', CustomLoginView.as_view(), name='custom_login'),
+    path('logout/', CustomLogoutView.as_view(), name='custom_logout'),
     
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+
