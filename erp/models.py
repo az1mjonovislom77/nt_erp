@@ -49,7 +49,7 @@ class Category(models.Model):
 class Course(models.Model):
     name = models.CharField(max_length=50)
     description = models.TextField()
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     duration = models.IntegerField(help_text="Dars davomiyligi oylarda",default=4)
     category = models.ForeignKey(Category,
                                  on_delete=models.CASCADE,
